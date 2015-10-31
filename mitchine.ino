@@ -56,22 +56,26 @@ Include the HTML, STYLE and Script "Pages"
 #include "example.h"
 
 
-#define ACCESS_POINT_NAME  "ESP01A"        
-#define ACCESS_POINT_PASSWORD  "" 
+
+#define ACCESS_POINT_NAME  "Mitchine San Francisco"        
+#define ACCESS_POINT_PASSWORD  "mitchinexmas15" 
 #define AdminTimeOut 180  // Defines the Time in Seconds, when the Admin-Mode will be diabled
 const char* mqtt_server = "mqtt.develpr.com";
 
   WiFiClient espClient;
   PubSubClient client(espClient);
   long lastMsg = 0;
+  long lastReconnect = 0;
 char msg[50];
 int value = 0;
+int ledArrayPositions[] = {0,0,0,0,0,0,0,0};
 
 void setup ( void ) {
     pinMode(BUILTIN_LED, OUTPUT);
+    pinMode(2, OUTPUT);
   EEPROM.begin(512);
   Serial.begin(115200);
-  delay(500);
+  delay(1500);
   Serial.println("Starting ES8266");
   if (!ReadConfig())
   {
@@ -86,7 +90,7 @@ void setup ( void ) {
     config.Update_Time_Via_NTP_Every =  0;
     config.timezone = -10;
     config.daylight = true;
-    config.DeviceName = "Not Named";
+    config.DeviceName = "Mitchine San Francisco";
     config.AutoTurnOff = false;
     config.AutoTurnOn = false;
     config.TurnOffHour = 0;
@@ -146,14 +150,17 @@ void setup ( void ) {
 }
 
 void callback(char* topic, byte* payload, unsigned int length) {
-  Serial.print("Message arrived [");
-  Serial.print(topic);
-  Serial.print("] ");
-  for (int i = 0; i < length; i++) {
-    Serial.print((char)payload[i]);
-  }
-  Serial.println();
+  Serial.print("Message arrived: ");
+  Serial.println((char)payload[0]);
+  Serial.println((int)payload[0]);
+  Serial.println("-----");
 
+  if((char)payload[0] == '2'){
+    digitalWrite(2,HIGH);
+  }
+  else if((char)payload[0] == '3'){
+    digitalWrite(2,LOW);
+  }
   // Switch on the LED if an 1 was received as first character
   if ((char)payload[0] == '1') {
     digitalWrite(BUILTIN_LED, LOW);   // Turn the LED on (Note that LOW is the voltage level
@@ -168,21 +175,23 @@ void callback(char* topic, byte* payload, unsigned int length) {
 
 void reconnect() {
   // Loop until we're reconnected
-  while (!client.connected()) {
+  int attempts = 0;
+  while (!client.connected() && attempts < 4) {
     Serial.print("Attempting MQTT connection...");
     // Attempt to connect
     if (client.connect("ESP8266Client")) {
       Serial.println("connected");
       // Once connected, publish an announcement...
-      client.publish("outTopic", "hello world");
+      client.publish("mitchinexmas15", "hello world");
       // ... and resubscribe
-      client.subscribe("inTopic");
+      client.subscribe("mitchinexmas15");
     } else {
       Serial.print("failed, rc=");
       Serial.print(client.state());
       Serial.println(" try again in 5 seconds");
       // Wait 5 seconds before retrying
-      delay(5000);
+      delay(3000);
+      attempts++;
     }
   }
 }
@@ -237,11 +246,13 @@ void loop ( void ) {
   }
   server.handleClient();
 
-
-   if (!client.connected()) {
+  if (!client.connected() && lastReconnect > 100000) {
+    lastReconnect = 0;
     reconnect();
   }
+  lastReconnect++;
   client.loop();
+
 
   long now = millis();
   if (now - lastMsg > 2000) {
@@ -252,6 +263,7 @@ void loop ( void ) {
     Serial.println(msg);
     client.publish("outTopic", msg);
   }
+  
 
   if (Refresh)  
   {
