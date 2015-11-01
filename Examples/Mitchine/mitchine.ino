@@ -1,36 +1,3 @@
-/* 
-  ESP_WebConfig 
-
-  Copyright (c) 2015 John Lassen. All rights reserved.
-  This is free software; you can redistribute it and/or
-  modify it under the terms of the GNU Lesser General Public
-  License as published by the Free Software Foundation; either
-  version 2.1 of the License, or (at your option) any later version.
-  This software is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-  Lesser General Public License for more details.
-  You should have received a copy of the GNU Lesser General Public
-  License along with this library; if not, write to the Free Software
-  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-
-  Latest version: 1.1.3  - 2015-07-20
-  Changed the loading of the Javascript and CCS Files, so that they will successively loaded and that only one request goes to the ESP.
-
-  -----------------------------------------------------------------------------------------------
-  History
-
-  Version: 1.1.2  - 2015-07-17
-  Added URLDECODE for some input-fields (SSID, PASSWORD...)
-
-  Version  1.1.1 - 2015-07-12
-  First initial version to the public
-
-
-
-  
-  */
-
 
 #include <ESP8266WiFi.h>
 #include <WiFiClient.h>
@@ -46,10 +13,7 @@
 /*
 Include the HTML, STYLE and Script "Pages"
 */
-#include "Page_Root.h"
 #include "Page_Admin.h"
-#include "Page_Script.js.h"
-#include "Page_Style.css.h"
 #include "Page_Information.h"
 #include "PAGE_NetworkConfiguration.h"
 
@@ -60,7 +24,7 @@ Include the HTML, STYLE and Script "Pages"
 #define AdminTimeOut 180  // Defines the Time in Seconds, when the Admin-Mode will be diabled
 WiFiClient espClient;
 PubSubClient client(espClient);
-const char* mqtt_server = "mqtt.develpr.com";
+const int maximumDevices = 8;
 
 long lastReconnect = 0;
 long lastMsg = 0;
@@ -84,17 +48,9 @@ void setup ( void ) {
     config.IP[0] = 192;config.IP[1] = 168;config.IP[2] = 1;config.IP[3] = 100;
     config.Netmask[0] = 255;config.Netmask[1] = 255;config.Netmask[2] = 255;config.Netmask[3] = 0;
     config.Gateway[0] = 192;config.Gateway[1] = 168;config.Gateway[2] = 1;config.Gateway[3] = 1;
-    config.ntpServerName = "0.de.pool.ntp.org";
-    config.Update_Time_Via_NTP_Every =  0;
-    config.timezone = -10;
-    config.daylight = true;
-    config.DeviceName = "Mitchine Berkeley";
-    config.AutoTurnOff = false;
-    config.AutoTurnOn = false;
-    config.TurnOffHour = 0;
-    config.TurnOffMinute = 0;
-    config.TurnOnHour = 0;
-    config.TurnOnMinute = 0;
+    config.mqttServer = "mqtt.develpr.com";
+    config.deviceIdentifier = 1;
+    
     WriteConfig();
     Serial.println("General config applied");
   }
@@ -121,8 +77,6 @@ void setup ( void ) {
   server.on ( "/admin.html", []() { Serial.println("admin.html"); server.send ( 200, "text/html", PAGE_AdminMainPage );   }  );
   server.on ( "/config.html", send_network_configuration_html );
   server.on ( "/info.html", []() { Serial.println("info.html"); server.send ( 200, "text/html", PAGE_Information );   }  );
-  server.on ( "/style.css", []() { Serial.println("style.css"); server.send ( 200, "text/plain", PAGE_Style_css );  } );
-  server.on ( "/microajax.js", []() { Serial.println("microajax.js"); server.send ( 200, "text/plain", PAGE_microajax_js );  } );
   server.on ( "/admin/values", send_network_configuration_values_html );
   server.on ( "/admin/connectionstate", send_connection_state_values_html );
   server.on ( "/admin/infovalues", send_information_values_html );
@@ -130,8 +84,11 @@ void setup ( void ) {
   server.onNotFound ( []() { Serial.println("Page Not Found"); server.send ( 400, "text/html", "Page not Found" );   }  );
   server.begin();
   Serial.println( "HTTP server started" );
-  tkSecond.attach(1,Second_Tick);
-  client.setServer(mqtt_server, 1883);
+
+  char charMqttServer[config.mqttServer.length()];
+  config.mqttServer.toCharArray(charMqttServer, config.mqttServer.length()); 
+  
+  client.setServer(charMqttServer, 1883);
   client.setCallback(callback);
 
 }
@@ -139,12 +96,11 @@ void setup ( void ) {
 
 
 void callback(char* topic, byte* payload, unsigned int length) {
-
-  if((char)payload[0] == '2'){
-    digitalWrite(2,HIGH);
-  }
-  else if((char)payload[0] == '3'){
-    digitalWrite(2,LOW);
+  
+  int mqttIdentifier = (char)payload[0] - '0';
+  
+  if(mqttIdentifier != config.deviceIdentifier && (mqttIdentifier > 0 && mqttIdentifier <= maximumDevices) ){
+    digitalWrite(mqttIdentifier, HIGH);
   }
   
 }
@@ -217,10 +173,6 @@ void loop ( void ) {
     ///Serial.println("Refreshing...");
      //Serial.printf("FreeMem:%d %d:%d:%d %d.%d.%d \n",ESP.getFreeHeap() , DateTime.hour,DateTime.minute, DateTime.second, DateTime.year, DateTime.month, DateTime.day);
   }
-
-
-
- 
 
 
 }
