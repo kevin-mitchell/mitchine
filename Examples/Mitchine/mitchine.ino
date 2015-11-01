@@ -86,10 +86,13 @@ void setup ( void ) {
   Serial.println( "HTTP server started" );
 
   char charMqttServer[config.mqttServer.length()];
-  config.mqttServer.toCharArray(charMqttServer, config.mqttServer.length()); 
-  
+  config.mqttServer.toCharArray(charMqttServer, config.mqttServer.length()+1); 
+
   client.setServer(charMqttServer, 1883);
+  
   client.setCallback(callback);
+
+  reconnect();
 
 }
 
@@ -142,7 +145,6 @@ void loop ( void ) {
   }
   
   server.handleClient();
-  
 
   if(WiFi.status() == WL_CONNECTED){
 
@@ -176,4 +178,3 @@ void loop ( void ) {
 
 
 }
-
