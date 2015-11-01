@@ -34,12 +34,13 @@
 
 #include <ESP8266WiFi.h>
 #include <WiFiClient.h>
-
 #include <PubSubClient.h>
 #include <ESP8266WebServer.h>
 #include <Ticker.h>
 #include <EEPROM.h>
 #include <WiFiUdp.h>
+
+
 #include "helpers.h"
 #include "global.h"
 /*
@@ -49,38 +50,35 @@ Include the HTML, STYLE and Script "Pages"
 #include "Page_Admin.h"
 #include "Page_Script.js.h"
 #include "Page_Style.css.h"
-#include "Page_NTPsettings.h"
 #include "Page_Information.h"
-#include "Page_General.h"
 #include "PAGE_NetworkConfiguration.h"
-#include "example.h"
 
 
 
-#define ACCESS_POINT_NAME  "Mitchine San Francisco"        
+#define ACCESS_POINT_NAME  "Mitchine Berkeley"        
 #define ACCESS_POINT_PASSWORD  "mitchinexmas15" 
 #define AdminTimeOut 180  // Defines the Time in Seconds, when the Admin-Mode will be diabled
+WiFiClient espClient;
+PubSubClient client(espClient);
 const char* mqtt_server = "mqtt.develpr.com";
 
-  WiFiClient espClient;
-  PubSubClient client(espClient);
-  long lastMsg = 0;
-  long lastReconnect = 0;
+long lastReconnect = 0;
+long lastMsg = 0;
 char msg[50];
 int value = 0;
-int ledArrayPositions[] = {0,0,0,0,0,0,0,0};
+
+
 
 void setup ( void ) {
-    pinMode(BUILTIN_LED, OUTPUT);
-    pinMode(2, OUTPUT);
+  pinMode(2, OUTPUT);
   EEPROM.begin(512);
   Serial.begin(115200);
-  delay(1500);
+  delay(500);
   Serial.println("Starting ES8266");
   if (!ReadConfig())
   {
     // DEFAULT CONFIG
-    config.ssid = "MYSSID"; 
+    config.ssid = "MYSSID";
     config.password = "MYPASSWORD";
     config.dhcp = true;
     config.IP[0] = 192;config.IP[1] = 168;config.IP[2] = 1;config.IP[3] = 100;
@@ -90,7 +88,7 @@ void setup ( void ) {
     config.Update_Time_Via_NTP_Every =  0;
     config.timezone = -10;
     config.daylight = true;
-    config.DeviceName = "Mitchine San Francisco";
+    config.DeviceName = "Mitchine Berkeley";
     config.AutoTurnOff = false;
     config.AutoTurnOn = false;
     config.TurnOffHour = 0;
@@ -116,7 +114,6 @@ void setup ( void ) {
   
 
   server.on ( "/", send_network_configuration_html  );
-  server.on ( "/admin/filldynamicdata", filldynamicdata );
   
   server.on ( "/favicon.ico",   []() { Serial.println("favicon.ico"); server.send ( 200, "text/html", "" );   }  );
 
@@ -124,36 +121,24 @@ void setup ( void ) {
   server.on ( "/admin.html", []() { Serial.println("admin.html"); server.send ( 200, "text/html", PAGE_AdminMainPage );   }  );
   server.on ( "/config.html", send_network_configuration_html );
   server.on ( "/info.html", []() { Serial.println("info.html"); server.send ( 200, "text/html", PAGE_Information );   }  );
-  server.on ( "/ntp.html", send_NTP_configuration_html  );
-  server.on ( "/general.html", send_general_html  );
-//  server.on ( "/example.html", []() { server.send ( 200, "text/html", PAGE_EXAMPLE );  } );
   server.on ( "/style.css", []() { Serial.println("style.css"); server.send ( 200, "text/plain", PAGE_Style_css );  } );
   server.on ( "/microajax.js", []() { Serial.println("microajax.js"); server.send ( 200, "text/plain", PAGE_microajax_js );  } );
   server.on ( "/admin/values", send_network_configuration_values_html );
   server.on ( "/admin/connectionstate", send_connection_state_values_html );
   server.on ( "/admin/infovalues", send_information_values_html );
-  server.on ( "/admin/ntpvalues", send_NTP_configuration_values_html );
-  server.on ( "/admin/generalvalues", send_general_configuration_values_html);
-  server.on ( "/admin/devicename",     send_devicename_value_html);
- 
-
- 
 
   server.onNotFound ( []() { Serial.println("Page Not Found"); server.send ( 400, "text/html", "Page not Found" );   }  );
   server.begin();
   Serial.println( "HTTP server started" );
   tkSecond.attach(1,Second_Tick);
-  UDPNTPClient.begin(2390);  // Port for NTP receive
-
-    client.setServer(mqtt_server, 1883);
+  client.setServer(mqtt_server, 1883);
   client.setCallback(callback);
+
 }
 
+
+
 void callback(char* topic, byte* payload, unsigned int length) {
-  Serial.print("Message arrived: ");
-  Serial.println((char)payload[0]);
-  Serial.println((int)payload[0]);
-  Serial.println("-----");
 
   if((char)payload[0] == '2'){
     digitalWrite(2,HIGH);
@@ -161,15 +146,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
   else if((char)payload[0] == '3'){
     digitalWrite(2,LOW);
   }
-  // Switch on the LED if an 1 was received as first character
-  if ((char)payload[0] == '1') {
-    digitalWrite(BUILTIN_LED, LOW);   // Turn the LED on (Note that LOW is the voltage level
-    // but actually the LED is on; this is because
-    // it is acive low on the ESP-01)
-  } else {
-    digitalWrite(BUILTIN_LED, HIGH);  // Turn the LED off by making the voltage HIGH
-  }
-
+  
 }
 
 
@@ -188,7 +165,7 @@ void reconnect() {
     } else {
       Serial.print("failed, rc=");
       Serial.print(client.state());
-      Serial.println(" try again in 5 seconds");
+      Serial.println(" try again in 3 seconds");
       // Wait 5 seconds before retrying
       delay(3000);
       attempts++;
@@ -207,63 +184,32 @@ void loop ( void ) {
        WiFi.mode(WIFI_STA);
     }
   }
-  if (config.Update_Time_Via_NTP_Every  > 0 )
-  {
-    if (cNTP_Update > 5 && firstStart)
-    {
-      NTPRefresh();
-      cNTP_Update =0;
-      firstStart = false;
-    }
-    else if ( cNTP_Update > (config.Update_Time_Via_NTP_Every * 60) )
-    {
-
-      NTPRefresh();
-      cNTP_Update =0;
-    }
-  }
-
-  if(DateTime.minute != Minute_Old)
-  {
-     Minute_Old = DateTime.minute;
-     if (config.AutoTurnOn)
-     {
-       if (DateTime.hour == config.TurnOnHour && DateTime.minute == config.TurnOnMinute)
-       {
-          Serial.println("SwitchON");
-       }
-     }
-
-
-     Minute_Old = DateTime.minute;
-     if (config.AutoTurnOff)
-     {
-       if (DateTime.hour == config.TurnOffHour && DateTime.minute == config.TurnOffMinute)
-       {
-          Serial.println("SwitchOff");
-       }
-     }
-  }
-  server.handleClient();
-
-  if (!client.connected() && lastReconnect > 100000) {
-    lastReconnect = 0;
-    reconnect();
-  }
-  lastReconnect++;
-  client.loop();
-
-
-  long now = millis();
-  if (now - lastMsg > 2000) {
-    lastMsg = now;
-    ++value;
-    snprintf (msg, 75, "hello world #%ld", value);
-    Serial.print("Publish message: ");
-    Serial.println(msg);
-    client.publish("outTopic", msg);
-  }
   
+  server.handleClient();
+  
+
+  if(WiFi.status() == WL_CONNECTED){
+
+    long now = millis();
+    if (!client.connected() && (now - lastReconnect > 60000)) {
+      Serial.println("Reconnecting...");
+      lastReconnect = now;
+      reconnect();
+    }
+
+      client.loop();
+   
+      now = millis();
+      if (now - lastMsg > 10000) {
+        lastMsg = now;
+        ++value;
+        snprintf (msg, 75, "hello world #%ld", value);
+        Serial.print("Publish message: ");
+        Serial.println(msg);
+        client.publish("outTopic", msg);
+      }
+    
+  }
 
   if (Refresh)  
   {
