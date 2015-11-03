@@ -30,6 +30,7 @@ long lastReconnect = 0;
 long lastMsg = 0;
 char msg[50];
 int value = 0;
+int outputPins[] = {16,14,12,13,4,5,2,15};
 
 
 
@@ -96,14 +97,29 @@ void setup ( void ) {
 
 }
 
+void disableAllButMe(){
+  for(int i = 0; i < 8; i++){
+    if(outputPins[i] != getPin(config.deviceIdentifier)){
+      digitalWrite(outputPins[i], LOW);
+    }
+  }
+}
+
+void publishTouched(){
+  snprintf (msg, 75, "%ld", getPin(config.deviceIdentifier));
+  client.publish("mitchinexmas15", msg);
+}
 
 
 void callback(char* topic, byte* payload, unsigned int length) {
   
-  int mqttIdentifier = (char)payload[0] - '0';
+  int mqttIdentifier = getPin((char)payload[0] - '0');
   
-  if(mqttIdentifier != config.deviceIdentifier && (mqttIdentifier > 0 && mqttIdentifier <= maximumDevices) ){
+  if( mqttIdentifier > 0 && mqttIdentifier <= maximumDevices ){
     digitalWrite(mqttIdentifier, HIGH);
+  }
+  else if( mqttIdentifier == -1){
+    disableAllButMe();
   }
   
 }
@@ -131,6 +147,46 @@ void reconnect() {
     }
   }
 }
+
+
+int getPin(int mqttIdentifier){
+  int result = -2;
+  switch(mqttIdentifier){
+    case 1:
+      result = 16;
+     case 2:
+      result = 14;
+      break;
+     case 3:
+      result = 12;
+      break;
+     case 4:
+      result = 13;
+      break;
+     case 5:
+      result = 4;
+      break;
+     case 6:
+      result = 5;
+      break;
+     case 7:
+      result = 2;
+      break;
+     case 8:
+      result = 15;
+      break;
+     default:
+      result = -2;
+      break;
+  }
+
+  if(mqttIdentifier == config.deviceIdentifier){
+    result = -1;
+  }
+
+  return result;
+}
+
 
  
 void loop ( void ) {
