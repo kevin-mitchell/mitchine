@@ -30,12 +30,20 @@ long lastReconnect = 0;
 long lastMsg = 0;
 char msg[50];
 int value = 0;
+
 int outputPins[] = {16,14,12,13,4,5,2,15};
 
-
-
 void setup ( void ) {
+  
   pinMode(2, OUTPUT);
+  pinMode(16, OUTPUT);
+  pinMode(14, OUTPUT);
+  pinMode(12, OUTPUT);
+  pinMode(13, OUTPUT);
+  pinMode(4, OUTPUT);
+  pinMode(5, OUTPUT);
+  pinMode(15, OUTPUT);
+  
   EEPROM.begin(512);
   Serial.begin(115200);
   delay(500);
@@ -115,8 +123,13 @@ void callback(char* topic, byte* payload, unsigned int length) {
   
   int mqttIdentifier = getPin((char)payload[0] - '0');
   
-  if( mqttIdentifier > 0 && mqttIdentifier <= maximumDevices ){
-    digitalWrite(mqttIdentifier, HIGH);
+  if( mqttIdentifier > -1 ){
+    if(mqttIdentifier == 0){
+       digitalWrite(mqttIdentifier, HIGH);
+    }
+    else{
+      digitalWrite(mqttIdentifier, HIGH);
+    }
   }
   else if( mqttIdentifier == -1){
     disableAllButMe();
@@ -149,41 +162,20 @@ void reconnect() {
 }
 
 
-int getPin(int mqttIdentifier){
+int getPin(int mqttIdentifier){ 
+  
   int result = -2;
-  switch(mqttIdentifier){
-    case 1:
-      result = 16;
-     case 2:
-      result = 14;
-      break;
-     case 3:
-      result = 12;
-      break;
-     case 4:
-      result = 13;
-      break;
-     case 5:
-      result = 4;
-      break;
-     case 6:
-      result = 5;
-      break;
-     case 7:
-      result = 2;
-      break;
-     case 8:
-      result = 15;
-      break;
-     default:
-      result = -2;
-      break;
+  
+  if(mqttIdentifier < 1 || mqttIdentifier > 8){
+     result = result;
   }
-
-  if(mqttIdentifier == config.deviceIdentifier){
+  else if(mqttIdentifier == config.deviceIdentifier){
     result = -1;
   }
-
+  else{
+    result = outputPins[(mqttIdentifier-1)];
+  }
+  
   return result;
 }
 
