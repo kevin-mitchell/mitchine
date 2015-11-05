@@ -26,20 +26,30 @@ WiFiClient espClient;
 PubSubClient client(espClient);
 const int maximumDevices = 8;
 
+//The number of samples we'll take each time we check the capacitive button
+const int capSamples = 10;
+//The pin to be used for capacitive input
+const int capInputPin = 12;
+//The threshold for the total the capacitive input adds up to with capSamples attempts
+const int threshHold = 500;
+//time millis of last touch detection event
+long lastCapTouch = 0;
+
 long lastReconnect = 0;
 long lastMsg = 0;
 char msg[50];
 int value = 0;
 
-int outputPins[] = {16,14,12,13,4,5,2,15};
+
+int outputPins[] = {16,14,0,13,4,5,2,15};
 
 void setup ( void ) {
   
   pinMode(2, OUTPUT);
   pinMode(16, OUTPUT);
   pinMode(14, OUTPUT);
-  pinMode(12, OUTPUT);
   pinMode(13, OUTPUT);
+  pinMode(0, OUTPUT);
   pinMode(4, OUTPUT);
   pinMode(5, OUTPUT);
   pinMode(15, OUTPUT);
@@ -103,6 +113,33 @@ void setup ( void ) {
 
   reconnect();
 
+}
+
+
+static bool checkTouch() {
+   long riseTime = 0;
+
+   //capSamples = int 20 - just the number of samples to take - adjust as desried
+   for(int i = 0; i < capSamples; i++){
+
+    //capInputPin = int 12 in my case, just the pin # to use
+    pinMode(capInputPin, OUTPUT);
+    digitalWrite(capInputPin, LOW);
+
+    //This delay which may or may not need to be here.    
+    delayMicroseconds(500);
+
+    pinMode(capInputPin, INPUT_PULLUP);
+
+    while(digitalRead(capInputPin) != HIGH){
+      ++riseTime;
+    }
+
+   }
+   //"threshHold" is some number that you will likely need to
+   //experiment with. For 20 samples, somewhere around 1000
+   //might be good. 
+   return (riseTime > threshHold);   
 }
 
 void disableAllButMe(){
@@ -206,13 +243,21 @@ void loop ( void ) {
       client.loop();
    
       now = millis();
-      if (now - lastMsg > 10000) {
+      if (now - lastMsg > 5000) {
         lastMsg = now;
         ++value;
         snprintf (msg, 75, "hello world #%ld", value);
         Serial.print("Publish message: ");
         Serial.println(msg);
         client.publish("outTopic", msg);
+      }
+      
+      if((now - lastCapTouch) > 6000){
+        if(checkTouch()){
+          publishTouched();
+          disableAllButMe();
+          lastCapTouch = now;
+        }
       }
     
   }
