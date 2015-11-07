@@ -42,6 +42,7 @@ int value = 0;
 
 
 int outputPins[] = {16,14,0,13,4,5,2,15};
+int ledOnState[] = {HIGH, HIGH, LOW, HIGH, HIGH, HIGH, HIGH, HIGH};
 
 void setup ( void ) {
   
@@ -145,7 +146,7 @@ static bool checkTouch() {
 void disableAllButMe(){
   for(int i = 0; i < 8; i++){
     if(outputPins[i] != getPin(config.deviceIdentifier)){
-      digitalWrite(outputPins[i], LOW);
+      digitalWrite(outputPins[i], !ledOnState[i]);
     }
   }
 }
@@ -162,7 +163,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
   
   if( mqttIdentifier > -1 ){
     if(mqttIdentifier == 0){
-       digitalWrite(mqttIdentifier, HIGH);
+       digitalWrite(mqttIdentifier, LOW);
     }
     else{
       digitalWrite(mqttIdentifier, HIGH);
@@ -257,6 +258,7 @@ void loop ( void ) {
           publishTouched();
           disableAllButMe();
           lastCapTouch = now;
+          Serial.println("TOUCHED");
         }
       }
     
