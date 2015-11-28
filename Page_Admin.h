@@ -40,6 +40,7 @@ function setValues(url)
 	</style>
 	</head>
 	<body>
+  <h1 style="font-family:Helvetica Neue, Helvetica, Arial, SANS-SERIF;font-size:3em; margin:.5em;font-weight:100;">Mitchine</h1>
 <strong>Administration</strong>
 <hr>
 <a href="config.html" style="width:250px" class="btn btn--m btn--blue" >Network Configuration</a><br>

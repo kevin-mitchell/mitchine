@@ -18,8 +18,7 @@ Include the HTML, STYLE and Script "Pages"
 #include "PAGE_NetworkConfiguration.h"
 
 
-
-#define ACCESS_POINT_NAME  "Mitchine Berkeley"        
+#define ACCESS_POINT_NAME  "Mitchine Chicago"        
 #define ACCESS_POINT_PASSWORD  "mitchinexmas15" 
 #define AdminTimeOut 180  // Defines the Time in Seconds, when the Admin-Mode will be diabled
 WiFiClient espClient;
@@ -41,8 +40,8 @@ char msg[50];
 int value = 0;
 
 
-int outputPins[] = {16,14,0,13,4,5,2,15};
-int ledOnState[] = {HIGH, HIGH, LOW, HIGH, HIGH, HIGH, HIGH, HIGH};
+int outputPins[] = {16,14,0,13,4,15,2,5};
+int ledOnState[] = {HIGH, HIGH, LOW, HIGH, HIGH, HIGH, LOW, HIGH};
 
 void setup ( void ) {
   
@@ -162,12 +161,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
   int mqttIdentifier = getPin((char)payload[0] - '0');
   
   if( mqttIdentifier > -1 ){
-    if(mqttIdentifier == 0){
-       digitalWrite(mqttIdentifier, LOW);
-    }
-    else{
-      digitalWrite(mqttIdentifier, HIGH);
-    }
+      digitalWrite(outputPins[mqttIdentifier], ledOnState[mqttIdentifier]);
   }
   else if( mqttIdentifier == -1){
     disableAllButMe();
@@ -244,10 +238,10 @@ void loop ( void ) {
       client.loop();
    
       now = millis();
-      if (now - lastMsg > 5000) {
+      if (now - lastMsg > 90000) {
         lastMsg = now;
         ++value;
-        snprintf (msg, 75, "hello world #%ld", value);
+        snprintf (msg, 75, "I am alive #%ld", value);
         Serial.print("Publish message: ");
         Serial.println(msg);
         client.publish("outTopic", msg);
@@ -263,13 +257,5 @@ void loop ( void ) {
       }
     
   }
-
-  if (Refresh)  
-  {
-    Refresh = false;
-    ///Serial.println("Refreshing...");
-     //Serial.printf("FreeMem:%d %d:%d:%d %d.%d.%d \n",ESP.getFreeHeap() , DateTime.hour,DateTime.minute, DateTime.second, DateTime.year, DateTime.month, DateTime.day);
-  }
-
 
 }

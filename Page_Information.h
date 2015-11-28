@@ -41,7 +41,7 @@ function setValues(url)
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 	</head>
 	<body>
-
+<h1 style="font-family:Helvetica Neue, Helvetica, Arial, SANS-SERIF;font-size:3em; margin:.5em;font-weight:100;">Mitchine</h1>
 <a href="admin.html"  class="btn btn--s"><</a>&nbsp;&nbsp;<strong>Network Information</strong>
 <hr>
 <table border="0"  cellspacing="0" cellpadding="3" style="width:310px" >
