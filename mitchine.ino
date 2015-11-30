@@ -30,7 +30,7 @@ const int capSamples = 10;
 //The pin to be used for capacitive input
 const int capInputPin = 12;
 //The threshold for the total the capacitive input adds up to with capSamples attempts
-const int threshHold = 500;
+const int threshHold = 45;
 //time millis of last touch detection event
 long lastCapTouch = 0;
 
@@ -112,6 +112,7 @@ void setup ( void ) {
   client.setCallback(callback);
 
   reconnect();
+  disableAllButMe();
 
 }
 
@@ -157,16 +158,20 @@ void publishTouched(){
 
 
 void callback(char* topic, byte* payload, unsigned int length) {
-  
-  int mqttIdentifier = getPin((char)payload[0] - '0');
-  
-  if( mqttIdentifier > -1 ){
-      digitalWrite(outputPins[mqttIdentifier], ledOnState[mqttIdentifier]);
+
+  int mqttIdentifier = ((char)payload[0] - '0');
+  int pin = getPin(mqttIdentifier);
+
+//  if(mqttIdentifier == config.deviceIdentifier){
+//    disableAllButMe();  
+//  }
+  if( pin != -2 ){
+      digitalWrite(pin, ledOnState[mqttIdentifier-1]);
+      delay(500);
+      digitalWrite(pin, !ledOnState[mqttIdentifier-1]);
+      delay(500);
+      digitalWrite(pin, ledOnState[mqttIdentifier-1]);
   }
-  else if( mqttIdentifier == -1){
-    disableAllButMe();
-  }
-  
 }
 
 
@@ -200,9 +205,6 @@ int getPin(int mqttIdentifier){
   
   if(mqttIdentifier < 1 || mqttIdentifier > 8){
      result = result;
-  }
-  else if(mqttIdentifier == config.deviceIdentifier){
-    result = -1;
   }
   else{
     result = outputPins[(mqttIdentifier-1)];
@@ -252,7 +254,7 @@ void loop ( void ) {
           publishTouched();
           disableAllButMe();
           lastCapTouch = now;
-          Serial.println("TOUCHED");
+          
         }
       }
     
