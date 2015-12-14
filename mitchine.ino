@@ -1,4 +1,4 @@
-
+ 
 #include <ESP8266WiFi.h>
 #include <WiFiClient.h>
 #include <PubSubClient.h>
@@ -17,8 +17,17 @@ Include the HTML, STYLE and Script "Pages"
 #include "Page_Information.h"
 #include "PAGE_NetworkConfiguration.h"
 
-
-#define ACCESS_POINT_NAME  "Mitchine Chicago"        
+/*
+ * 1 = 16 = Mom = Red = Mitchine Chicago
+ * 2 = 14 = Dad = Orange = Mitchine Houghton
+ * 3 = 0 = Ant = Green = Mitchine Berkeley
+ * 4 = 13 = Tri = Light Blue = Mitchine Oakland
+ * 5 = 4 = Bri = Yellow = Mitchine San Francisco
+ * 6 = 15 = Izz = Purple = Mitchine Tokyo
+ * 7 = 2 = Gra = Brown = Mitchine Seoul
+ * 8 = 5 = KL = Black = Mitchine Osaka
+ */
+#define ACCESS_POINT_NAME  "Mitchine Chicago"
 #define ACCESS_POINT_PASSWORD  "mitchinexmas15" 
 #define AdminTimeOut 180  // Defines the Time in Seconds, when the Admin-Mode will be diabled
 WiFiClient espClient;
@@ -39,20 +48,30 @@ long lastMsg = 0;
 char msg[50];
 int value = 0;
 
-
+/*
+ * 1 = 16 = Mom = Red = Mitchine Chicago
+ * 2 = 14 = Dad = Orange = Mitchine Houghton
+ * 3 = 0 = Ant = Green = Mitchine Berkeley
+ * 4 = 13 = Tri = Light Blue = Mitchine Oakland
+ * 5 = 4 = Bri = Yellow = Mitchine San Francisco
+ * 6 = 15 = Izz = Purple = Mitchine Tokyo
+ * 7 = 2 = Gra = Brown = Mitchine Seoul
+ * 8 = 5 = KL = Black = Mitchine Osaka
+ */
 int outputPins[] = {16,14,0,13,4,15,2,5};
 int ledOnState[] = {HIGH, HIGH, LOW, HIGH, HIGH, HIGH, LOW, HIGH};
 
 void setup ( void ) {
-  
-  pinMode(2, OUTPUT);
+
   pinMode(16, OUTPUT);
   pinMode(14, OUTPUT);
-  pinMode(13, OUTPUT);
   pinMode(0, OUTPUT);
+  pinMode(13, OUTPUT);
   pinMode(4, OUTPUT);
-  pinMode(5, OUTPUT);
   pinMode(15, OUTPUT);
+  pinMode(2, OUTPUT);
+  pinMode(5, OUTPUT);
+  
   
   EEPROM.begin(512);
   Serial.begin(115200);
@@ -184,7 +203,7 @@ void reconnect() {
     if (client.connect("ESP8266Client")) {
       Serial.println("connected");
       // Once connected, publish an announcement...
-      client.publish("mitchinexmas15", "hello world");
+      client.publish("mitchinexmas15", "Welcome to Chicago!");
       // ... and resubscribe
       client.subscribe("mitchinexmas15");
     } else {
@@ -243,10 +262,14 @@ void loop ( void ) {
       if (now - lastMsg > 90000) {
         lastMsg = now;
         ++value;
-        snprintf (msg, 75, "I am alive #%ld", value);
+        if(value > 9999){
+          value = 1;
+        }
+        snprintf (msg, 75, "Hello from Chicago #%ld", value);
         Serial.print("Publish message: ");
         Serial.println(msg);
-        client.publish("outTopic", msg);
+        client.publish("heartBeat", msg);
+        
       }
       
       if((now - lastCapTouch) > 6000){
