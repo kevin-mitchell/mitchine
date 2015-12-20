@@ -25,7 +25,7 @@ Include the HTML, STYLE and Script "Pages"
  * 5 = 4 = Bri = Yellow = Mitchine San Francisco
  * 6 = 15 = Izz = Purple = Mitchine Tokyo
  * 7 = 2 = Gra = Brown = Mitchine Seoul
- * 8 = 5 = KL = Black = Mitchine Osaka
+ * 8 = 5 = KL = Pink = Mitchine Osaka
  */
 #define ACCESS_POINT_NAME  "Mitchine Chicago"
 #define ACCESS_POINT_PASSWORD  "mitchinexmas15" 
@@ -39,7 +39,7 @@ const int capSamples = 10;
 //The pin to be used for capacitive input
 const int capInputPin = 12;
 //The threshold for the total the capacitive input adds up to with capSamples attempts
-const int threshHold = 45;
+const int threshHold = 17;
 //time millis of last touch detection event
 long lastCapTouch = 0;
 
@@ -56,7 +56,7 @@ int value = 0;
  * 5 = 4 = Bri = Yellow = Mitchine San Francisco
  * 6 = 15 = Izz = Purple = Mitchine Tokyo
  * 7 = 2 = Gra = Brown = Mitchine Seoul
- * 8 = 5 = KL = Black = Mitchine Osaka
+ * 8 = 5 = KL = Pink = Mitchine Osaka
  */
 int outputPins[] = {16,14,0,13,4,15,2,5};
 int ledOnState[] = {HIGH, HIGH, LOW, HIGH, HIGH, HIGH, LOW, HIGH};
@@ -76,12 +76,12 @@ void setup ( void ) {
   EEPROM.begin(512);
   Serial.begin(115200);
   delay(500);
-  Serial.println("Starting ES8266");
+  Serial.println("Starting Mitchine");
   if (!ReadConfig())
   {
     // DEFAULT CONFIG
-    config.ssid = "MYSSID";
-    config.password = "MYPASSWORD";
+    config.ssid = "Mitchine";
+    config.password = "Mitchine";
     config.dhcp = true;
     config.IP[0] = 192;config.IP[1] = 168;config.IP[2] = 1;config.IP[3] = 100;
     config.Netmask[0] = 255;config.Netmask[1] = 255;config.Netmask[2] = 255;config.Netmask[3] = 0;
@@ -112,14 +112,14 @@ void setup ( void ) {
   server.on ( "/favicon.ico",   []() { Serial.println("favicon.ico"); server.send ( 200, "text/html", "" );   }  );
 
 
-  server.on ( "/admin.html", []() { Serial.println("admin.html"); server.send ( 200, "text/html", PAGE_AdminMainPage );   }  );
+  server.on ( "/admin.html", []() { Serial.println("admin.html"); server.send_P ( 200, "text/html", PAGE_AdminMainPage );   }  );
   server.on ( "/config.html", send_network_configuration_html );
-  server.on ( "/info.html", []() { Serial.println("info.html"); server.send ( 200, "text/html", PAGE_Information );   }  );
+  server.on ( "/info.html", []() { Serial.println("info.html"); server.send_P ( 200, "text/html", PAGE_Information );   }  );
   server.on ( "/admin/values", send_network_configuration_values_html );
   server.on ( "/admin/connectionstate", send_connection_state_values_html );
   server.on ( "/admin/infovalues", send_information_values_html );
 
-  server.onNotFound ( []() { Serial.println("Page Not Found"); server.send ( 400, "text/html", "Page not Found" );   }  );
+  server.onNotFound ( []() { Serial.println("Page Not Found"); server.send_P ( 400, "text/html", "Page not Found" );   }  );
   server.begin();
   Serial.println( "HTTP server started" );
 
@@ -171,7 +171,7 @@ void disableAllButMe(){
 }
 
 void publishTouched(){
-  snprintf (msg, 75, "%ld", getPin(config.deviceIdentifier));
+  snprintf (msg, 75, "%ld", config.deviceIdentifier);
   client.publish("mitchinexmas15", msg);
 }
 
