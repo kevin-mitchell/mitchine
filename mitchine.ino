@@ -19,7 +19,7 @@ Include the HTML, STYLE and Script "Pages"
 
 /*
  * 1 = 16 = Mom = Red = Mitchine Chicago
- * 2 = 14 = Dad = Orange = Mitchine Houghton
+ * 2 = 14 = Dad = Orange = Mitchine Amalfi
  * 3 = 0 = Ant = Green = Mitchine Berkeley
  * 4 = 13 = Tri = Light Blue = Mitchine Oakland
  * 5 = 4 = Bri = Yellow = Mitchine San Francisco
@@ -50,7 +50,7 @@ int value = 0;
 
 /*
  * 1 = 16 = Mom = Red = Mitchine Chicago
- * 2 = 14 = Dad = Orange = Mitchine Houghton
+ * 2 = 14 = Dad = Orange = Mitchine Amalfi
  * 3 = 0 = Ant = Green = Mitchine Berkeley
  * 4 = 13 = Tri = Light Blue = Mitchine Oakland
  * 5 = 4 = Bri = Yellow = Mitchine San Francisco
@@ -259,7 +259,7 @@ void loop ( void ) {
       client.loop();
    
       now = millis();
-      if (now - lastMsg > 90000) {
+      if (now - lastMsg > 90000) {      
         lastMsg = now;
         ++value;
         if(value > 9999){
