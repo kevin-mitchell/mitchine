@@ -27,8 +27,8 @@ Include the HTML, STYLE and Script "Pages"
  * 7 = 2 = Gra = Brown = Mitchine Seoul
  * 8 = 5 = KL = Pink = Mitchine Osaka
  */
-#define ACCESS_POINT_NAME  "Mitchine Chicago"
 #define ACCESS_POINT_PASSWORD  "mitchinexmas15" 
+#define ACCESS_POINT_NAME  "Mitchine Kevin"
 #define AdminTimeOut 180  // Defines the Time in Seconds, when the Admin-Mode will be diabled
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -39,7 +39,7 @@ const int capSamples = 10;
 //The pin to be used for capacitive input
 const int capInputPin = 12;
 //The threshold for the total the capacitive input adds up to with capSamples attempts
-const int threshHold = 17;
+const int threshHold = 15;
 //time millis of last touch detection event
 long lastCapTouch = 0;
 
@@ -181,14 +181,15 @@ void callback(char* topic, byte* payload, unsigned int length) {
   int mqttIdentifier = ((char)payload[0] - '0');
   int pin = getPin(mqttIdentifier);
 
-//  if(mqttIdentifier == config.deviceIdentifier){
-//    disableAllButMe();  
-//  }
   if( pin != -2 ){
       digitalWrite(pin, ledOnState[mqttIdentifier-1]);
-      delay(500);
+      delay(300);
       digitalWrite(pin, !ledOnState[mqttIdentifier-1]);
-      delay(500);
+      delay(300);
+      digitalWrite(pin, ledOnState[mqttIdentifier-1]);
+      delay(300);
+      digitalWrite(pin, !ledOnState[mqttIdentifier-1]);
+      delay(300);
       digitalWrite(pin, ledOnState[mqttIdentifier-1]);
   }
 }
@@ -198,19 +199,16 @@ void reconnect() {
   // Loop until we're reconnected
   int attempts = 0;
   while (!client.connected() && attempts < 4) {
-    Serial.print("Attempting MQTT connection...");
+    Serial.println("Attempting MQTT connection...");
     // Attempt to connect
-    if (client.connect("ESP8266Client")) {
+    if (client.connect("espKevin")) {
       Serial.println("connected");
       // Once connected, publish an announcement...
-      client.publish("mitchinexmas15", "Welcome to Chicago!");
+      client.publish("heartBeat", "Welcome Kevin!");
       // ... and resubscribe
       client.subscribe("mitchinexmas15");
-    } else {
-      Serial.print("failed, rc=");
-      Serial.print(client.state());
-      Serial.println(" try again in 3 seconds");
-      // Wait 5 seconds before retrying
+    } else {      
+      // Wait a few seconds before retrying
       delay(3000);
       attempts++;
     }
@@ -250,7 +248,7 @@ void loop ( void ) {
   if(WiFi.status() == WL_CONNECTED){
 
     long now = millis();
-    if (!client.connected() && (now - lastReconnect > 60000)) {
+    if (!client.connected() && (now - lastReconnect > 30000)) {
       Serial.println("Reconnecting...");
       lastReconnect = now;
       reconnect();
@@ -265,14 +263,14 @@ void loop ( void ) {
         if(value > 9999){
           value = 1;
         }
-        snprintf (msg, 75, "Hello from Chicago #%ld", value);
+        snprintf (msg, 75, "Hello Kevin #%ld", value);
         Serial.print("Publish message: ");
         Serial.println(msg);
         client.publish("heartBeat", msg);
         
       }
       
-      if((now - lastCapTouch) > 6000){
+      if((now - lastCapTouch) > 3000){
         if(checkTouch()){
           publishTouched();
           disableAllButMe();
